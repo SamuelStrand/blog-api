@@ -12,8 +12,9 @@ class Category(models.Model):
 
     name = models.CharField(
         max_length=NAME_MAX_LEN,
+        unique=True,
     )
-    slug = models.SlugField(unique=True),
+    slug = models.SlugField(unique=True)
 
 
 class Tag(models.Model):
@@ -21,10 +22,11 @@ class Tag(models.Model):
     Tag of post
     """
 
-    NAME_MAX_LEN = 100
+    NAME_MAX_LEN = 50
 
     name = models.CharField(
         max_length=NAME_MAX_LEN,
+        unique=True
     )
     slug = models.SlugField(unique=True)
 
@@ -33,12 +35,12 @@ class Post(models.Model):
     """
     The Post model
     """
+
     class StatusType(models.TextChoices):
-        DRAFT = "Draft",
-        PUBLISHED = "Published"
+        DRAFT = "draft", "Draft",
+        PUBLISHED = "published", "Published"
 
-
-    TITLE_MAX_LEN = 100
+    TITLE_MAX_LEN = 200
 
     author = models.ForeignKey(
         to=CustomUser,
@@ -68,6 +70,7 @@ class Post(models.Model):
         auto_now=True
     )
 
+
 class Comment(models.Model):
     """
     Comment model
@@ -84,4 +87,3 @@ class Comment(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True
     )
-

@@ -25,13 +25,13 @@ class CustomUserManager(BaseUserManager):
             raise ValidationError(
                 message="Email is required"
             )
-        if not first_name and last_name:
+        if not first_name and not last_name:
             raise ValidationError(
                 message="First name and last name are required"
             )
 
         new_user: 'CustomUser' = self.model(
-            email=self.normalize_email(email),
+            email=self.normalize_email(email).lower(),
             first_name=first_name,
             last_name=last_name,
             password=password,
