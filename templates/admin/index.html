@@ -1,0 +1,60 @@
+
+{% extends "admin/base.html" %}
+{% load unfold %}
+
+{% block content %}
+    {% component "unfold/components/container.html" %}
+
+        <h1 class="text-2xl font-semibold mb-6">
+            Blog API Dashboard
+        </h1>
+
+        <!-- Statistics cards -->
+        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+            {% for card in cards %}
+                {% component "unfold/components/card.html" with title=card.title %}
+                    {% component "unfold/components/title.html" %}
+                        {{ card.metric }}
+                    {% endcomponent %}
+                {% endcomponent %}
+            {% endfor %}
+        </div>
+
+        <!-- Posts per category -->
+        <div class="mb-6">
+            {% component "unfold/components/card.html" with title="Posts per category" %}
+                {% component "unfold/components/chart/bar.html" with data=posts_chart %}
+                {% endcomponent %}
+            {% endcomponent %}
+        </div>
+
+        <!-- Authors and publication progress -->
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+            <div>
+                {% component "unfold/components/card.html" with title="Top 5 Authors" %}
+                    {% component "unfold/components/table.html" with table=authors_table card_included=1 striped=1 %}
+                    {% endcomponent %}
+                {% endcomponent %}
+            </div>
+
+            <div>
+                {% component "unfold/components/card.html" with title="Publication Status" %}
+
+                    <div class="mb-6">
+                        {% component "unfold/components/progress.html" with title="Published" description="Published posts percentage" value=published_percent %}
+                        {% endcomponent %}
+                    </div>
+
+                    <div>
+                        {% component "unfold/components/progress.html" with title="Drafts" description="Draft posts percentage" value=drafts_percent %}
+                        {% endcomponent %}
+                    </div>
+
+                {% endcomponent %}
+            </div>
+
+        </div>
+
+    {% endcomponent %}
+{% endblock %}

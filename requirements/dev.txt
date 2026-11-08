@@ -1,5 +1,2 @@
-asgiref==3.12.1
-Django==6.1.1
-ruff==0.16.9
-sqlparse==0.6.0
-tzdata==2026.4
+-r base.txt
+Faker==40.44.0
