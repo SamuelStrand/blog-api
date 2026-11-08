@@ -3,3 +3,4 @@ Django==6.1.1
 ruff==0.16.9
 sqlparse==0.6.0
 tzdata==2026.4
+django-unfold==0.110.1

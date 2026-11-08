@@ -16,6 +16,11 @@ class Category(models.Model):
     )
     slug = models.SlugField(unique=True)
 
+    def __str__(self):
+        """Return category name"""
+
+        return self.name
+
 
 class Tag(models.Model):
     """
@@ -29,6 +34,11 @@ class Tag(models.Model):
         unique=True
     )
     slug = models.SlugField(unique=True)
+
+    def __str__(self):
+        """Return tag name"""
+
+        return self.name
 
 
 class Post(models.Model):
@@ -55,6 +65,7 @@ class Post(models.Model):
         to=Category,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
     )
     tags = models.ManyToManyField(
         to=Tag,
@@ -69,6 +80,11 @@ class Post(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True
     )
+
+    def __str__(self):
+        """Return post title"""
+
+        return self.title
 
 
 class Comment(models.Model):
@@ -87,3 +103,8 @@ class Comment(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True
     )
+
+    def __str__(self):
+        """Return comment with author"""
+
+        return f"Comment by {self.author.email}"
