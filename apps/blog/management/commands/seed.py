@@ -2,10 +2,12 @@
 from random import choice, randint, random, sample
 from time import perf_counter
 from typing import Any
+from datetime import timedelta
 
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
+from django.utils import timezone
 from django.utils.text import slugify
 from faker import Faker
 
@@ -34,6 +36,11 @@ class Command(BaseCommand):
     POST_PARAGRAPHS = 3
     MIN_COMMENT_SENTENCES = 1
     MAX_COMMENT_SENTENCES = 3
+
+    POST_DATE_RANGE_DAYS = 365
+    EDITED_POST_PROBABILITY = 0.30
+    MIN_EDIT_DAYS = 1
+    MAX_EDIT_DAYS = 30
 
     CATEGORY_NAMES = (
         "Python",
@@ -246,7 +253,7 @@ class Command(BaseCommand):
 
         return slug
 
-    def __create_posts(self, number_of_posts: int) -> int:
+    def __create_posts(self, number_of_posts: int) -> list[Post]:
         """Create posts and attach random tags."""
 
         fake = Faker()
@@ -321,14 +328,39 @@ class Command(BaseCommand):
 
         Post.objects.bulk_create(posts_to_create)
 
+        current_time = timezone.now()
+
+        for post in posts_to_create:
+            post.created_at = current_time - timedelta(
+                days=self.POST_DATE_RANGE_DAYS * random()
+            )
+
+            post.updated_at = post.created_at
+
+            if random() < self.EDITED_POST_PROBABILITY:
+                edit_days: int = randint(
+                    self.MIN_EDIT_DAYS,
+                    self.MAX_EDIT_DAYS,
+                )
+
+                post.updated_at = min(
+                    current_time,
+                    post.created_at + timedelta(days=edit_days),
+                )
+
+        Post.objects.bulk_update(
+            posts_to_create,
+            ["created_at", "updated_at"],
+        )
+
         for post, selected_tags in zip(
             posts_to_create, tags_for_posts
         ):
             post.tags.set(selected_tags)
 
-        return len(posts_to_create)
+        return posts_to_create
 
-    def __create_comments(self, number_of_comments: int) -> int:
+    def __create_comments(self, number_of_comments: int, posts: list[Post]) -> int:
         """Create comments for published posts only."""
 
         fake = Faker()
@@ -336,11 +368,11 @@ class Command(BaseCommand):
         users: list[CustomUser] = list(
             CustomUser.objects.all()
         )
-        published_posts: list[Post] = list(
-            Post.objects.filter(
-                status=Post.StatusType.PUBLISHED,
-            )
-        )
+        published_posts: list[Post] = [
+            post
+            for post in posts
+            if post.status == Post.StatusType.PUBLISHED
+        ]
 
         if number_of_comments > 0 and not users:
             raise CommandError(
@@ -373,6 +405,20 @@ class Command(BaseCommand):
 
         Comment.objects.bulk_create(comments_to_create)
 
+        current_time = timezone.now()
+
+        for comment in comments_to_create:
+            post_created_at = comment.post.created_at
+            comment.created_at = (
+                post_created_at
+                + (current_time - post_created_at) * random()
+            )
+
+        Comment.objects.bulk_update(
+            comments_to_create,
+            ["created_at"],
+        )
+
         return len(comments_to_create)
 
     def handle(self, *args: Any, **options: Any) -> None:
@@ -404,13 +450,14 @@ class Command(BaseCommand):
             )
             created_categories: int = self.__create_categories()
             created_tags: int = self.__create_tags()
-            created_posts: int = self.__create_posts(
+
+            created_posts: list[Post] = self.__create_posts(
                 posts_count
             )
             created_comments: int = self.__create_comments(
-                comments_count
+                comments_count,
+                created_posts
             )
-
         duration: float = perf_counter() - start_time
 
         self.stdout.write(
@@ -426,7 +473,7 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(
-            f'Posts: {created_posts} created'
+            f'Posts: {len(created_posts)} created'
         )
 
         self.stdout.write(
